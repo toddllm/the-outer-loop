@@ -1,0 +1,205 @@
+<!-- ===== SCRIPTS ===== -->
+<script>
+// ===== JARGON DEFINITIONS (for inline tooltips) =====
+const jargonDefs = {
+  'Lean Formalization': 'Translating a mathematical proof into code in the Lean programming language, where a computer verifies every logical step is correct. Like spell-check, but for math.',
+  'Fields Medal': "The highest honor in mathematics, awarded every 4 years to mathematicians under 40. Often called \"math's Nobel Prize.\"",
+  'RL Compute': 'Computing power spent on Reinforcement Learning - where an AI learns by trial and error (like playing a game millions of times) rather than studying examples.',
+  'Tokens per Second': 'Speed measure for AI text generation. Each "token" is roughly \u00BE of a word. 950 tok/s means generating ~700 words per second.',
+  'EUV Lithography': 'Extreme Ultraviolet Lithography - the most advanced chip-making technology. Uses ultra-short wavelength light to etch circuits at nanometer scale. Only ASML makes these machines (~$380M each).',
+  'GAA': 'Gate-All-Around - next-generation transistor design where the gate wraps entirely around the channel. Better power efficiency and performance at tiny sizes like 2nm.',
+  'TOPS': 'Trillion Operations Per Second - a measure of AI processing power on a chip. 50 TOPS means 50 trillion math operations every second, dedicated to AI tasks.',
+  'NPU': 'Neural Processing Unit - a specialized chip built just for AI workloads. Separate from the CPU (general computing) and GPU (graphics). Optimized for the matrix math that AI models need.',
+  'CFTC': 'Commodity Futures Trading Commission - the US federal agency that regulates derivatives and futures markets. If they regulate it, it\'s officially a commodity.',
+  'SHA-256': 'A cryptographic hash function. Takes any input and produces a fixed-length code that\'s practically impossible to reverse. Used in Bitcoin, HTTPS, and digital signatures.',
+  'Iron Dome': "Israel's existing missile defense system. Uses physical interceptor missiles (~$50,000 each) to shoot down incoming rockets. Iron Beam (laser) is its potential successor at $4/shot.",
+  'PJM': 'The regional grid operator managing electricity transmission for 13 US states + DC, serving 65 million people.',
+  'AdderBoard': 'A competition to build the smallest possible AI model (fewest parameters) that can accurately add 10-digit numbers. Tracks how fast model efficiency is improving.',
+  'Neural Engine': "Apple's dedicated AI accelerator chip, built into every M-series Mac and recent iPhone. Extremely power-efficient (~80x more than Nvidia A100) but poorly documented for direct use.",
+  'EUV': 'Extreme Ultraviolet Lithography - the most advanced chip-making technology. Uses ultra-short wavelength light to etch circuits at nanometer scale. Only ASML makes these machines (~$380M each).'
+};
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+  const pre = btn.closest('.try-block').querySelector('pre');
+  const lines = pre.textContent.split('\n')
+    .filter(line => !line.trim().startsWith('#'))
+    .filter(line => line.trim().length > 0)
+    .join('\n');
+  navigator.clipboard.writeText(lines).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.classList.contains('dark');
+  html.classList.replace(isDark ? 'dark' : 'light', isDark ? 'light' : 'dark');
+  localStorage.setItem('ol-theme', isDark ? 'light' : 'dark');
+  // Update toggle button icon
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.innerHTML = isDark ? '&#9788;' : '&#9790;';
+}
+
+// ===== READING PROGRESS BAR =====
+window.addEventListener('scroll', () => {
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+  const bar = document.getElementById('progress');
+  if (bar) bar.style.width = scrolled + '%';
+}, { passive: true });
+
+// ===== NAV AUTO-HIDE ON SCROLL DOWN =====
+let lastScrollY = 0;
+let navHidden = false;
+const topnav = document.getElementById('topnav');
+
+if (topnav) {
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY;
+    if (currentY > lastScrollY && currentY > 120 && !navHidden) {
+      topnav.classList.add('nav-hidden');
+      navHidden = true;
+    } else if (currentY < lastScrollY && navHidden) {
+      topnav.classList.remove('nav-hidden');
+      navHidden = false;
+    }
+    lastScrollY = currentY;
+  }, { passive: true });
+}
+
+// ===== SCROLL SPY (active nav + URL hash) =====
+const allSections = document.querySelectorAll('.section, .summary, .jargon-section');
+const navLinks = document.querySelectorAll('#topnav a');
+
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      if (id) {
+        // Update nav
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+        // Update URL hash (silent)
+        history.replaceState(null, '', '#' + id);
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+allSections.forEach(sec => sectionObserver.observe(sec));
+
+// ===== JARGON TOOLTIP =====
+const tooltip = document.getElementById('tooltip');
+let tooltipTimeout = null;
+
+function showTooltip(btn, term) {
+  const def = jargonDefs[term];
+  if (!def) return;
+  tooltip.querySelector('.tt-term').textContent = term;
+  tooltip.querySelector('.tt-def').textContent = def;
+  tooltip.classList.add('visible');
+  tooltip.setAttribute('aria-hidden', 'false');
+
+  // Position
+  const rect = btn.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+  let top = rect.bottom + 8;
+
+  // Keep within viewport
+  if (left < 12) left = 12;
+  if (left + tooltipRect.width > window.innerWidth - 12) left = window.innerWidth - tooltipRect.width - 12;
+  if (top + tooltipRect.height > window.innerHeight - 12) {
+    top = rect.top - tooltipRect.height - 8;
+  }
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + window.scrollY + 'px';
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  tooltip.setAttribute('aria-hidden', 'true');
+}
+
+// Attach jargon tooltip events
+document.querySelectorAll('button.jargon').forEach(btn => {
+  const term = btn.dataset.term;
+
+  btn.addEventListener('mouseenter', () => {
+    tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300);
+  });
+  btn.addEventListener('mouseleave', () => {
+    clearTimeout(tooltipTimeout);
+    hideTooltip();
+  });
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(tooltipTimeout);
+    if (tooltip.classList.contains('visible')) {
+      hideTooltip();
+    } else {
+      showTooltip(btn, term);
+    }
+  });
+  btn.addEventListener('focus', () => {
+    tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300);
+  });
+  btn.addEventListener('blur', () => {
+    clearTimeout(tooltipTimeout);
+    hideTooltip();
+  });
+});
+
+// Close tooltip on click elsewhere
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.jargon') && !e.target.closest('#tooltip')) {
+    hideTooltip();
+  }
+});
+
+// ===== DEEP LINK ON PAGE LOAD =====
+function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const target = document.querySelector(hash);
+  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+}
+
+// ===== MOBILE BOTTOM NAV ACTIVE STATE =====
+const bottomNav = document.getElementById('bottomnav');
+if (bottomNav) {
+  const bottomLinks = bottomNav.querySelectorAll('.bottom-nav-item[data-section]');
+  const bottomObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        bottomLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.section === entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  document.querySelectorAll('#summary, #jargon').forEach(el => {
+    if (el) bottomObserver.observe(el);
+  });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  handleDeepLink();
+  // Set correct theme icon
+  const isDark = document.documentElement.classList.contains('dark');
+  const themeBtn = document.querySelector('.theme-toggle');
+  if (themeBtn) themeBtn.innerHTML = isDark ? '&#9790;' : '&#9788;';
+});
+</script>
+
+</body>
+</html>

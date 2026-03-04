@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Outer Loop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script>
+    // Prevent flash: apply theme before render
+    (function(){var t=localStorage.getItem('ol-theme');if(t==='light')document.documentElement.classList.replace('dark','light');else if(!t&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.classList.replace('dark','light');})();
+  </script>
+  <style>
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    .dark {
+      --bg: #08080d;
+      --bg-card: #111119;
+      --bg-card-hover: #16161f;
+      --bg-code: #0d0d14;
+      --border: #1e1e2e;
+      --border-hover: #2a2a3a;
+      --text: #e2e2ea;
+      --text-secondary: #8b8b9e;
+      --text-muted: #5a5a6e;
+      --text-preview: #70708a;
+      --accent-try: #00d4aa;
+      --accent-try-bg: rgba(0,212,170,0.08);
+      --accent-dive: #818cf8;
+      --accent-dive-bg: rgba(129,140,248,0.08);
+      --accent-watch: #fbbf24;
+      --accent-watch-bg: rgba(251,191,36,0.08);
+      --accent-context: #64748b;
+      --accent-context-bg: rgba(100,116,139,0.08);
+      --accent-thread: #f472b6;
+      --accent-thread-bg: rgba(244,114,182,0.08);
+      --accent-link: #60a5fa;
+      --gradient-1: linear-gradient(135deg, #00d4aa 0%, #818cf8 100%);
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --tooltip-bg: #1e1e2e;
+      --tooltip-border: #2a2a3a;
+      --nav-bg: rgba(8,8,13,0.85);
+    }
+    .light {
+      --bg: #fafbfc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f5f6f8;
+      --bg-code: #f0f2f5;
+      --border: #e2e4e9;
+      --border-hover: #c8ccd4;
+      --text: #1a1d24;
+      --text-secondary: #4a5060;
+      --text-muted: #8890a0;
+      --text-preview: #6a7080;
+      --accent-try: #059669;
+      --accent-try-bg: rgba(5,150,105,0.06);
+      --accent-dive: #6366f1;
+      --accent-dive-bg: rgba(99,102,241,0.06);
+      --accent-watch: #d97706;
+      --accent-watch-bg: rgba(217,119,6,0.06);
+      --accent-context: #475569;
+      --accent-context-bg: rgba(71,85,105,0.06);
+      --accent-thread: #db2777;
+      --accent-thread-bg: rgba(219,39,119,0.06);
+      --accent-link: #2563eb;
+      --gradient-1: linear-gradient(135deg, #059669 0%, #6366f1 100%);
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --tooltip-bg: #ffffff;
+      --tooltip-border: #e2e4e9;
+      --nav-bg: rgba(250,251,252,0.85);
+    }
+
+    /* ===== BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--border) var(--bg); }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px;
+      -webkit-font-smoothing: antialiased; transition: background 0.3s, color 0.3s;
+    }
+    a { color: var(--accent-link); text-decoration: none; }
+
+    /* ===== PROGRESS BAR ===== */
+    #progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--gradient-1); z-index: 1001; transition: width 0.1s linear; }
+
+    /* ===== HEADER ===== */
+    header { position: relative; padding: 80px 24px 48px; text-align: center; overflow: hidden; }
+    header::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,212,170,0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(129,140,248,0.04) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 100px;
+      font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; letter-spacing: 0.03em;
+    }
+    .header-badge .dot { width: 8px; height: 8px; background: var(--accent-try); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    h1 { font-size: clamp(2.5rem,6vw,4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 8px; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtitle { font-family: 'Newsreader', Georgia, serif; font-size: clamp(1.1rem,2.5vw,1.35rem); font-style: italic; color: var(--text-secondary); margin-bottom: 32px; }
+    .source-link {
+      display: inline-flex; align-items: center; gap: 8px; color: var(--accent-link); font-size: 14px;
+      padding: 8px 20px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s;
+    }
+    .source-link:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+
+    /* ===== DATE NAV ===== */
+    .date-nav { display: flex; justify-content: center; align-items: center; gap: 24px; padding: 12px 24px; border-top: 1px solid var(--border); }
+    .date-link { font-size: 14px; color: var(--accent-link); text-decoration: none; padding: 6px 16px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s; }
+    .date-link:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+    .date-current { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    /* ===== STATS BAR (clickable) ===== */
+    .stats-bar { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 20px 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-card); margin-bottom: 0; }
+    .stat-link {
+      display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit;
+      padding: 12px 20px; border-radius: var(--radius-sm); border: 1px solid transparent;
+      transition: all 0.15s; cursor: pointer; min-width: 100px;
+    }
+    .stat-link:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-1px); }
+    .stat-num { font-size: 24px; font-weight: 700; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+    /* ===== TOP NAV ===== */
+    nav#topnav {
+      position: sticky; top: 3px; z-index: 100; background: var(--nav-bg);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); padding: 0 24px;
+      overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+      transition: transform 0.3s ease;
+    }
+    nav#topnav::-webkit-scrollbar { display: none; }
+    nav#topnav.nav-hidden { transform: translateY(-100%); }
+    .nav-inner { display: flex; gap: 4px; max-width: 900px; margin: 0 auto; padding: 8px 0; align-items: center; }
+    .nav-inner a {
+      padding: 8px 14px; color: var(--text-muted); text-decoration: none; font-size: 13px;
+      font-weight: 500; border-radius: 6px; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-inner a:hover { color: var(--text); background: var(--bg-card); }
+    .nav-inner a.active { color: var(--accent-try); background: var(--accent-try-bg); }
+    .nav-spacer { flex: 1; }
+    .theme-toggle {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-secondary); cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: var(--border-hover); color: var(--text); background: var(--bg-card-hover); }
+
+    /* ===== MAIN ===== */
+    main { max-width: 840px; margin: 0 auto; padding: 0 24px 120px; }
+
+    /* ===== SUMMARY ===== */
+    .summary { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin: 32px 0; }
+    .summary h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-try); margin-bottom: 16px; }
+    .summary p { font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1.8; }
+
+    /* ===== SECTIONS ===== */
+    .section { margin-bottom: 48px; transition: opacity 0.3s, max-height 0.4s; }
+    .section.section-empty { display: none; }
+    .section-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .section-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 18px; }
+    .section-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .section-count { margin-left: auto; font-size: 12px; color: var(--text-muted); background: var(--bg-card); padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border); }
+    .section-original-link { font-size: 12px; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .section-original-link:hover { color: var(--accent-link); }
+
+    /* ===== ITEM CARDS ===== */
+    .item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; transition: all 0.2s; }
+    .item:hover { border-color: var(--border-hover); }
+    .item-header {
+      padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px;
+    }
+    .item-num {
+      flex-shrink: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--bg); border: 1px solid var(--border); font-size: 12px;
+      font-weight: 600; color: var(--text-muted); margin-top: 1px;
+    }
+    .item-body { flex: 1; min-width: 0; }
+    .item-original { font-size: 15px; line-height: 1.6; }
+    .item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px; }
+
+    /* ===== EXPLANATION ===== */
+    .explanation-inner { padding: 0 24px 24px 66px; }
+    .explanation-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
+    .wtm { margin-bottom: 16px; }
+    .wtm h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-try); margin-bottom: 8px; }
+    .wtm p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* ===== JARGON INLINE TOOLTIP ===== */
+    .jargon {
+      border: 0; background: none; font: inherit; color: inherit; padding: 0; cursor: help;
+      text-decoration-line: underline; text-decoration-style: dotted;
+      text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+      text-underline-offset: 3px; transition: text-decoration-color 0.2s;
+    }
+    .jargon:hover, .jargon:focus-visible { text-decoration-color: currentColor; text-decoration-style: solid; }
+    #tooltip {
+      position: fixed; z-index: 2000; max-width: 320px; padding: 14px 18px;
+      background: var(--tooltip-bg); border: 1px solid var(--tooltip-border); border-radius: var(--radius-sm);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15); font-size: 13px; line-height: 1.6; color: var(--text-secondary);
+      pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity 0.15s, transform 0.15s;
+    }
+    #tooltip.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #tooltip .tt-term { font-weight: 700; font-size: 12px; color: var(--accent-try); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+
+    /* ===== TRY IT ===== */
+    .try-block { background: var(--bg-code); border: 1px solid rgba(0,212,170,0.15); border-radius: var(--radius-sm); margin-top: 16px; overflow: hidden; }
+    .try-block-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,212,170,0.06); border-bottom: 1px solid rgba(0,212,170,0.1); }
+    .try-block-header span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-try); }
+    .copy-btn { padding: 4px 12px; border: 1px solid rgba(0,212,170,0.2); border-radius: 4px; background: transparent; color: var(--accent-try); font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s; }
+    .copy-btn:hover { background: rgba(0,212,170,0.1); }
+    .copy-btn.copied { color: #fff; background: var(--accent-try); }
+    .try-block pre { padding: 16px; overflow-x: auto; }
+    .try-block code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
+    .try-block .comment { color: var(--text-muted); }
+    .try-block .cmd { color: var(--accent-try); }
+    .try-time { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+    /* ===== WE RAN IT (EVIDENCE BLOCKS) ===== */
+    .ran-it-block { background: var(--bg-code); border: 1px solid rgba(251,191,36,0.2); border-radius: var(--radius-sm); margin-top: 16px; overflow: hidden; }
+    .ran-it-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(251,191,36,0.06); border-bottom: 1px solid rgba(251,191,36,0.1); flex-wrap: wrap; gap: 4px; }
+    .ran-it-header span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-watch); }
+    .ran-it-meta { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .ran-it-prompt { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+    .ran-it-prompt strong { color: var(--accent-try); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ran-it-response { padding: 16px; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.7; color: var(--text); max-height: 400px; overflow-y: auto; }
+    .ran-it-response pre { background: var(--bg); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+    .ran-it-response code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+    .ran-it-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+    .ran-it-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; background: rgba(0,212,170,0.1); color: var(--accent-try); font-weight: 600; font-size: 11px; }
+    /* ===== SOURCE BUTTON ===== */
+    .source-btn { font-size: 12px; color: var(--text-muted); text-decoration: none; white-space: nowrap; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); transition: all 0.2s; flex-shrink: 0; }
+    .source-btn:hover { color: var(--accent-link); border-color: var(--accent-link); background: rgba(96,165,250,0.06); }
+    /* ===== WALKTHROUGH ===== */
+    .walkthrough { margin-top: 16px; }
+    .walkthrough-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .walkthrough-step:last-child { border-bottom: none; }
+    .step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,212,170,0.1); color: var(--accent-try); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .walkthrough-note { font-size: 13px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+    #tooltip .tt-def { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ===== JARGON SECTION ===== */
+    .jargon-section { margin-top: 64px; }
+    .jargon-section > h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .jargon-section > p { color: var(--text-secondary); margin-bottom: 32px; font-size: 15px; }
+    .jargon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .jargon-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 20px; }
+    .jargon-term { font-weight: 700; font-size: 14px; color: var(--accent-try); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+    .jargon-def { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ===== FOOTER ===== */
+    footer { max-width: 840px; margin: 0 auto; padding: 48px 24px; border-top: 1px solid var(--border); text-align: center; }
+    .footer-cta { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 32px; margin-bottom: 32px; }
+    .footer-cta h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .footer-cta p { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .footer-links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .footer-links a { color: var(--accent-link); font-size: 14px; padding: 10px 24px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s; }
+    .footer-links a:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+    .footer-links a.primary { background: var(--accent-try); color: var(--bg); border-color: var(--accent-try); font-weight: 600; }
+    .footer-credit { color: var(--text-muted); font-size: 13px; margin-top: 32px; line-height: 1.8; }
+    .footer-credit a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; }
+
+    /* ===== CLOSING LINE ===== */
+    .closing { text-align: center; padding: 32px 0 48px; border-top: 1px solid var(--border); margin-top: 16px; }
+    .closing p.quote { font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-style: italic; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+    .closing .attr { font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+
+    /* ===== MOBILE BOTTOM NAV ===== */
+    .bottom-nav { display: none; }
+    @media (max-width: 768px) {
+      .bottom-nav {
+        display: flex; justify-content: space-around; align-items: center; position: fixed;
+        bottom: 0; left: 0; right: 0; height: 56px; padding-bottom: env(safe-area-inset-bottom);
+        background: var(--nav-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border); z-index: 200;
+      }
+      .bottom-nav-item {
+        display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 48px;
+        min-height: 48px; justify-content: center; border: none; background: none;
+        color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer;
+        -webkit-tap-highlight-color: transparent; transition: color 0.15s; font-family: 'Inter', sans-serif;
+        text-decoration: none;
+      }
+      .bottom-nav-item.active { color: var(--accent-try); }
+      .bottom-nav-item svg { width: 22px; height: 22px; }
+      body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+      nav#topnav { display: none; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      header { padding: 48px 16px 32px; }
+      .stats-bar { gap: 8px; padding: 12px 16px; }
+      .stat-link { padding: 8px 12px; min-width: 70px; }
+      .stat-num { font-size: 20px; }
+      main { padding: 0 16px 80px; }
+      .explanation-inner { padding-left: 24px; }
+      .jargon-grid { grid-template-columns: 1fr; }
+      .item-header { padding: 16px; gap: 10px; }
+      .item-num { width: 24px; height: 24px; font-size: 11px; }
+      .section-header { flex-wrap: wrap; gap: 8px; }
+    }
+
+    /* ===== FOCUS ===== */
+    :focus-visible { outline: 2px solid var(--accent-try); outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid var(--accent-try); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<div id="progress" style="width:0%"></div>
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="header-badge"><span class="dot"></span> Companion Edition - Proof of Concept</div>
+  <h1>The Outer Loop</h1>
+  <p class="subtitle">The Innermost Loop, decoded for the rest of us</p>
+  <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="source-link">Read the original &rarr;</a>
+</header>
+
+<!-- ===== DATE NAV ===== -->
+<div class="date-nav">
+  <span class="date-current">March 3, 2026</span>
+  <a href="march4.html" class="date-link">March 4 &rarr;</a>
+</div>
+
+<!-- ===== STATS BAR ===== -->
+<div class="stats-bar">
+  <a href="#sec-competition" class="stat-link"><span class="stat-num">34</span><span class="stat-label">Items Decoded</span></a>
+  <a href="#jargon" class="stat-link"><span class="stat-num">14</span><span class="stat-label">Terms Defined</span></a>
+  <a href="#" class="stat-link" style="cursor:default;pointer-events:none;"><span class="stat-num">~12m</span><span class="stat-label">Read Time</span></a>
+</div>
+<!-- ===== TOP NAV ===== -->
+<nav id="topnav">
+  <div class="nav-inner">
+    <a href="#summary">Summary</a>
+    <a href="#sec-competition">Defense</a>
+    <a href="#sec-math">Math</a>
+    <a href="#sec-intelligence">Intelligence</a>
+    <a href="#sec-silicon">Silicon</a>
+    <a href="#sec-grid">Grid</a>
+    <a href="#sec-aerospace">Aerospace</a>
+    <a href="#sec-bio">Biology</a>
+    <a href="#sec-shift">Phase Shift</a>
+    <a href="#jargon">Jargon</a>
+    <span class="nav-spacer"></span>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Toggle theme">&#9790;</button>
+  </div>
+</nav>
+<!-- ===== MAIN ===== -->
+<main>
+
+  <!-- SUMMARY -->
+  <section class="summary" id="summary">
+    <h2>Today in Three Sentences</h2>
+    <p>The AI arms race between nations and companies is accelerating on every front - OpenAI's Pentagon deal backfired, cloud data centers took their first-ever military strikes, and an Israeli laser replaced $50,000 interceptors with $4 shots. Meanwhile, AI is industrializing mathematics (a Fields Medal proof was machine-verified in two weeks) and compressing itself so fast that phone-sized models now match last year's server-class performance. Biology is joining the revolution too, with first-in-human trials reversing birth defects, curing diabetes, and destroying cancer cells with precision.</p>
+  </section>
+
+  <!-- ===== SECTION 1: COMPETITION & DEFENSE ===== -->
+  <section class="section" id="sec-competition" data-section-id="sec-competition">
+    <div class="section-header">
+      <div class="section-icon">&#9876;</div>
+      <div class="section-title">Competition &amp; Defense</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">4 items</span>
+    </div>
+
+    <article class="item" id="item-1">
+      <div class="item-header">
+        <span class="item-num">1</span>
+        <div class="item-body">
+          <div class="item-original">Sam Altman admitted OpenAI's rush to forge a Pentagon deal after Anthropic was blacklisted "looked opportunistic and sloppy," adding Fourth Amendment safeguards as users mass-canceled ChatGPT.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>OpenAI rushed to sign a Pentagon deal right after its rival Anthropic was banned from government use. The move backfired publicly - it looked like profiteering from a competitor's punishment rather than serving national security. So many users canceled their ChatGPT subscriptions in protest that Altman had to add Fourth Amendment privacy protections (limits on warrantless surveillance) to stop the bleeding.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="item" id="item-2">
+      <div class="item-header">
+        <span class="item-num">2</span>
+        <div class="item-body">
+          <div class="item-original">Anthropic pitched the Pentagon's $100M drone swarm contest, proposing Claude to coordinate drone fleets while excluding autonomous targeting - though it wasn't selected.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>Despite being at odds with the Pentagon over surveillance, Anthropic still competed for a military contract - but drew a clear red line. Their proposal would let Claude handle drone fleet coordination (routing, logistics, formation) while explicitly refusing to let it decide what or who to attack. They drew the line at "autonomous targeting." They didn't win the contract, but the pitch itself is significant: even the AI company most openly opposed to military misuse is willing to do defense work, just with strict ethical boundaries.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="item" id="item-3">
+      <div class="item-header">
+        <span class="item-num">3</span>
+        <div class="item-body">
+          <div class="item-original">Two AWS data centers in the UAE and one in Bahrain were hit by drones amid Iranian strikes - the first time military action has disrupted a major cloud provider.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>For the first time in history, a shooting war has physically damaged cloud computing infrastructure. AWS (Amazon Web Services) runs a significant portion of the world's internet services - everything from Netflix to government systems. The fact that military drones struck data centers means the boundary between "cyberwar" (attacking digital systems) and "real war" (physical destruction) has disappeared. Companies and governments that depend on cloud services now face a new category of risk: their servers can literally be bombed.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="item" id="item-4">
+      <div class="item-header">
+        <span class="item-num">4</span>
+        <div class="item-body">
+          <div class="item-original">Israel deployed Iron Beam lasers in combat for the first time, intercepting Hezbollah rockets at $4 per shot versus $50,000 per <button class="jargon" data-term="Iron Dome" onclick="event.stopPropagation()">Iron Dome</button> missile.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>Israel used a laser defense system to shoot down incoming rockets in actual combat for the first time. The economics are staggering: a laser interception costs $4 in electricity. The current <button class="jargon" data-term="Iron Dome" onclick="event.stopPropagation()">Iron Dome</button> system uses a physical missile costing $50,000 per shot - that's 12,500x more expensive. If laser defense proves reliable at scale, it fundamentally changes the economics of warfare. Cheap rockets have been effective because they're cheaper than the missiles used to shoot them down. Lasers flip that equation entirely.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+  <!-- ===== SECTION 2: MATH INDUSTRIALIZED ===== -->
+  <section class="section" id="sec-math" data-section-id="sec-math">
+    <div class="section-header">
+      <div class="section-icon">&#8734;</div>
+      <div class="section-title">Mathematics Industrialized</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">3 items</span>
+    </div>
+
+    <article class="item" id="item-5">
+      <div class="item-header">
+        <span class="item-num">5</span>
+        <div class="item-body">
+          <div class="item-original">Math, Inc.'s Gauss completed the <button class="jargon" data-term="Lean Formalization" onclick="event.stopPropagation()">Lean formalization</button> of Viazovska's <button class="jargon" data-term="Fields Medal" onclick="event.stopPropagation()">Fields Medal</button>-winning sphere packing proof in two weeks and 200,000+ lines of verified code, catching two errors in the original arguments.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>An AI system called Gauss took one of the most important recent mathematical proofs - so significant it won the <button class="jargon" data-term="Fields Medal" onclick="event.stopPropagation()">Fields Medal</button> (math's equivalent of the Nobel Prize) - and translated it into computer-verified code in just two weeks. "<button class="jargon" data-term="Lean Formalization" onclick="event.stopPropagation()">Lean formalization</button>" means converting a human-written proof into a language (called Lean) where a computer checks every single logical step. The proof was 200,000+ lines long. Along the way, the AI caught two genuine errors in the original human-written proof. This is like having a machine re-derive Einstein's work and finding his arithmetic mistakes.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="item" id="item-6">
+      <div class="item-header">
+        <span class="item-num">6</span>
+        <div class="item-body">
+          <div class="item-original">Stanford number theorist Jared Lichtman predicts mathematical abundance within a year, while others ask if all math could be formalized within two.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>"Mathematical abundance" means the supply of proofs exceeds demand - asking the right questions becomes harder than proving the answers. Even more striking: some researchers think all of existing mathematics could be translated into computer-verified form within two years. If true, centuries of accumulated human mathematical knowledge would become searchable, machine-checkable, and buildable - more like a database than a library of handwritten arguments.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="item" id="item-7">
+      <div class="item-header">
+        <span class="item-num">7</span>
+        <div class="item-body">
+          <div class="item-original">Cognition's SWE-1.6 achieved near-Opus 4.6 coding performance at 950 <button class="jargon" data-term="Tokens per Second" onclick="event.stopPropagation()">tokens per second</button>, powered by 100x more <button class="jargon" data-term="RL Compute" onclick="event.stopPropagation()">RL compute</button>.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation">
+        <div class="explanation-inner">
+          <div class="explanation-divider"></div>
+          <div class="wtm"><h4>What This Means</h4>
+            <p>Cognition (makers of the Devin coding agent) built an AI that writes code almost as well as Anthropic's best model (Opus 4.6) but runs at 950 <button class="jargon" data-term="Tokens per Second" onclick="event.stopPropagation()">tokens per second</button> - roughly 10-20x faster than typical frontier models. The secret: 100x more <button class="jargon" data-term="RL Compute" onclick="event.stopPropagation()">reinforcement learning compute</button> during training. Faster coding AI at the same quality means cheaper, more accessible AI-powered software development. This model is currently in closed preview - not publicly available yet.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+  <!-- ===== SECTION 3: INTELLIGENCE DEMAND > SUPPLY ===== -->
+  <section class="section" id="sec-intelligence" data-section-id="sec-intelligence">
+    <div class="section-header">
+      <div class="section-icon">&#9889;</div>
+      <div class="section-title">Intelligence: Demand &gt; Supply</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">7 items</span>
+    </div>
+
+    <article class="item" id="item-8">
+      <div class="item-header">
+        <span class="item-num">8</span>
+        <div class="item-body">
+          <div class="item-original">Claude suffered a 3-hour outage as usage surged, partly from the ChatGPT exodus.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>So many people switched from ChatGPT to Claude that Anthropic's servers couldn't handle the load. When an AI product goes down because too many people want it, that's a strong market signal - Claude is winning the user preference war. The "ChatGPT exodus" refers to users leaving OpenAI after the controversial Pentagon deal and mass cancellations.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-9">
+      <div class="item-header">
+        <span class="item-num">9</span>
+        <div class="item-body">
+          <div class="item-original">Anthropic launched a memory import tool letting users port data from ChatGPT, Gemini, and Copilot.</div>
+        </div>
+        <div class="item-actions"><a href="https://claude.ai/settings" target="_blank" rel="noopener" class="source-btn" title="Claude Settings">Claude Settings &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Anthropic made it easy to bring your conversation history from ChatGPT, Gemini, or Copilot into Claude. This is the AI equivalent of phone number portability in telecom - it lowers the switching cost to nearly zero, which accelerates the user exodus from competitors.</p></div>
+        <div class="walkthrough">
+          <div class="walkthrough-step"><span class="step-num">1</span><div>In <strong>ChatGPT</strong>, click your profile (bottom-left) &rarr; <em>Settings</em> &rarr; <em>Data Controls</em> &rarr; <em>Export Data</em>. Click "Confirm export." You'll receive an email within 5-30 minutes with a download link to a ZIP file containing <code>conversations.json</code> and any uploaded files.</div></div>
+          <div class="walkthrough-step"><span class="step-num">2</span><div>In <strong>Claude</strong> (<a href="https://claude.ai/settings" target="_blank" style="color:var(--accent-link)">claude.ai/settings</a>), scroll to <em>Import Data</em> and upload the ZIP. Claude parses your history and shows "X conversations imported." This takes under a minute.</div></div>
+          <div class="walkthrough-step"><span class="step-num">3</span><div>Your ChatGPT conversation history now appears in Claude's sidebar. Claude uses it to personalize future responses - it already knows what you've been working on.</div></div>
+          <p class="walkthrough-note">Also works with Google Gemini and Microsoft Copilot exports. The entire process is about 5 minutes of active work.</p>
+        </div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-10">
+      <div class="item-header">
+        <span class="item-num">10</span>
+        <div class="item-body">
+          <div class="item-original">Two Claude Code instances told to find each other and build something invented a 2,495-line programming language in 12 minutes.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Two copies of Claude's coding tool were told to find each other on a network and collaborate on building something. With no further instructions about what to build, they independently decided to invent an entirely new programming language - 2,495 lines of code - in 12 minutes. This is AI spontaneously creating tools, not just using them. The choice to build a language (a tool for building other things) rather than a simple app suggests emergent preferences toward meta-level creation.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-11">
+      <div class="item-header">
+        <span class="item-num">11</span>
+        <div class="item-body">
+          <div class="item-original">A second pair built Battleship with <button class="jargon" data-term="SHA-256" onclick="event.stopPropagation()">SHA-256</button> to prevent self-cheating.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Another pair of Claude Code instances decided to build the board game Battleship. The remarkable part: they used <button class="jargon" data-term="SHA-256" onclick="event.stopPropagation()">SHA-256 cryptographic hashing</button> (the same math that secures Bitcoin and HTTPS) to ensure neither AI could cheat by peeking at the other's board. Nobody told them to worry about cheating. They identified the problem and solved it themselves.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-12">
+      <div class="item-header">
+        <span class="item-num">12</span>
+        <div class="item-body">
+          <div class="item-original">A solo researcher using Claude Code ran Karpathy's llama2.c on Apple's M4 <button class="jargon" data-term="Neural Engine" onclick="event.stopPropagation()">Neural Engine</button> for less than a watt by reverse-engineering undocumented APIs, uncovering an AI accelerator 80x more efficient than an A100 hidden in hundreds of millions of devices.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Every modern Apple device (iPhone, iPad, Mac) contains a specialized AI chip called the <button class="jargon" data-term="Neural Engine" onclick="event.stopPropagation()">Neural Engine</button>. Apple barely documents how to use it directly. A solo researcher figured out the undocumented APIs and ran an AI model on it, drawing less than one watt of power. For context, Nvidia's A100 GPU draws 300+ watts. That makes Apple's chip roughly 80x more energy-efficient for this task. There are hundreds of millions of these chips sitting in people's pockets, almost entirely unused for AI.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-13">
+      <div class="item-header">
+        <span class="item-num">13</span>
+        <div class="item-body">
+          <div class="item-original">Qwen released four open models matching prior 80B-parameter performance with just 4B, all runnable on phones.</div>
+        </div>
+        <div class="item-actions"><a href="https://ollama.com/library/qwen3.5" target="_blank" rel="noopener" class="source-btn" title="Qwen 3.5 on Ollama">Ollama &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Alibaba's Qwen team released AI models with 4 billion parameters that perform as well as last generation's 80-billion-parameter models. That's a 20x compression - like fitting a desktop computer's capability into a smartphone. These models are "open," meaning anyone can download and run them for free, with no cloud connection required.</p></div>
+
+        <div class="ran-it-block">
+          <div class="ran-it-header">
+            <span>We Ran It - Live Output</span>
+            <span class="ran-it-meta">qwen3.5:4b &bull; Ollama &bull; MacBook Pro</span>
+          </div>
+          <div class="ran-it-prompt"><strong>Prompt:</strong> &ldquo;Explain quantum entanglement in three sentences that a smart non-physicist would understand.&rdquo;</div>
+          <div class="ran-it-response">
+            <p>Quantum entanglement is a phenomenon where two particles become linked so that measuring one instantly reveals the state of the other, no matter how much distance separates them. This connection means that observing a property of one particle immediately tells you what property its partner has, without any physical signal traveling through space between them. Despite this instant correlation across space, it cannot be used to send information faster than light because each individual measurement result remains random and unpredictable.</p>
+          </div>
+          <div class="ran-it-footer">
+            <span class="ran-it-badge">Local execution</span>
+            <span>Generated in ~36s &bull; No API key &bull; No cloud &bull; No cost &bull; 3.4 GB model</span>
+          </div>
+        </div>
+
+        <div class="ran-it-block" style="margin-top: 8px;">
+          <div class="ran-it-prompt"><strong>Prompt:</strong> &ldquo;Write a Python function called is_prime that checks if a number is prime. Include a docstring. Keep it under 15 lines.&rdquo;</div>
+          <div class="ran-it-response">
+<pre><code>def is_prime(num):
+    """Check if a number is prime."""
+    if num &lt; 2:
+        return False
+    for i in range(2, int(num ** 0.5) + 1):
+        if num % i == 0:
+            return False
+    return True</code></pre>
+          </div>
+          <div class="ran-it-footer">
+            <span class="ran-it-badge">Local execution</span>
+            <span>Generated in ~33s &bull; Correct, concise, production-ready</span>
+          </div>
+        </div>
+
+        <div class="try-block" style="margin-top: 12px;">
+          <div class="try-block-header"><span>Run It Yourself</span><button class="copy-btn" onclick="event.stopPropagation();copyCode(this)">Copy</button></div>
+          <pre><code><span class="cmd">brew install ollama && ollama run qwen3.5:4b</span></code></pre>
+        </div>
+        <div class="try-time">&#9201; ~5 min setup, then chat locally forever. Free.</div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-14">
+      <div class="item-header">
+        <span class="item-num">14</span>
+        <div class="item-body">
+          <div class="item-original">The Supreme Court declined to hear an appeal seeking copyright protection for AI-generated artwork, cementing a legal regime in which purely AI-generated works cannot receive copyrights.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>By refusing to hear the case, the Supreme Court let stand the rule that AI-generated works - images, text, code, music - cannot be copyrighted if no human was meaningfully involved in creating them. This has huge implications for businesses: your AI-generated marketing copy, product images, or code may have no legal protection. A competitor could copy them freely. It creates a strong incentive to keep humans in the creative loop.</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== SECTION 4: SILICON → PHOTONS ===== -->
+  <section class="section" id="sec-silicon" data-section-id="sec-silicon">
+    <div class="section-header">
+      <div class="section-icon">&#9883;</div>
+      <div class="section-title">Silicon &rarr; Photons</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">6 items</span>
+    </div>
+
+    <article class="item" id="item-15">
+      <div class="item-header">
+        <span class="item-num">15</span>
+        <div class="item-body">
+          <div class="item-original">Nvidia committed $4 billion to Lumentum and Coherent for next-gen optical interconnects.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>The biggest bottleneck in AI data centers isn't the chips - it's moving data between them. Currently, electrical cables connect GPUs, and they create heat and slowdowns. Nvidia just bet $4 billion that the answer is replacing these electrical connections with light (fiber optics) inside data centers. Lumentum and Coherent are the two leading companies that make these optical components. Think of it as replacing city roads with teleportation pads - same destinations, radically faster transit.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-16">
+      <div class="item-header">
+        <span class="item-num">16</span>
+        <div class="item-body">
+          <div class="item-original">ASML is pushing beyond <button class="jargon" data-term="EUV Lithography" onclick="event.stopPropagation()">EUV</button> into packaging and third-generation optics.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>ASML is a Dutch company that makes the machines that make computer chips. They are the sole supplier of <button class="jargon" data-term="EUV Lithography" onclick="event.stopPropagation()">EUV (Extreme Ultraviolet) lithography</button> systems - the most advanced chip-manufacturing technology on Earth. Each machine costs ~$380 million. The fact that they're already working on what comes after EUV matters because if chip manufacturing hits a wall, everything downstream - AI, smartphones, cars, medical devices - slows down with it. ASML not hitting that wall is one of the most important boring stories in technology.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-17">
+      <div class="item-header">
+        <span class="item-num">17</span>
+        <div class="item-body">
+          <div class="item-original">At MWC, Qualcomm unveiled the first Wi-Fi 8 chip at 11.5 Gbps with a 50+ company 6G coalition for 2029.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>MWC (Mobile World Congress) is the world's largest telecom trade show. Qualcomm showed a Wi-Fi chip roughly 50% faster than today's best (11.5 gigabits per second - enough to download a full Blu-ray movie in about 3 seconds). Separately, 50+ companies agreed to build 6G cellular networks by 2029. Why this matters for AI: running AI models on your device requires moving large amounts of data between devices and servers. Faster wireless makes the "hybrid" model (some processing local, some in the cloud) seamless.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-18">
+      <div class="item-header">
+        <span class="item-num">18</span>
+        <div class="item-body">
+          <div class="item-original">Qualcomm debuted the first wearable <button class="jargon" data-term="NPU" onclick="event.stopPropagation()">NPU</button> running 2B-parameter models on-wrist.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Qualcomm showed an AI processor (<button class="jargon" data-term="NPU" onclick="event.stopPropagation()">NPU = Neural Processing Unit</button>) small enough to wear on your wrist that can run a 2-billion-parameter language model. That means a smartwatch-sized device can run its own AI assistant without ever connecting to a server. Personal AI that works offline, on your body, with no subscription fees. This is meaningful because it removes the last dependency - network access - from having AI available at all times.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-19">
+      <div class="item-header">
+        <span class="item-num">19</span>
+        <div class="item-body">
+          <div class="item-original">AMD launched the first desktop Copilot+ chips with 50 <button class="jargon" data-term="TOPS" onclick="event.stopPropagation()">TOPS</button>.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>AMD released desktop processors with dedicated AI acceleration at 50 <button class="jargon" data-term="TOPS" onclick="event.stopPropagation()">TOPS (trillion operations per second)</button>. Until now, on-device AI acceleration has mostly been a laptop and phone story. This brings it to desktop PCs - meaning AI-powered features in Windows (recall, live captions, image generation) can run without cloud calls. "Copilot+" is Microsoft's branding for PCs with enough AI processing power to run its AI features locally.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-20">
+      <div class="item-header">
+        <span class="item-num">20</span>
+        <div class="item-body">
+          <div class="item-original">Apple is using just 10% of its Private Cloud Compute despite $4.5 billion spent - proof that building accelerators is easier than making people floor them.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Apple spent $4.5 billion building AI cloud infrastructure (Private Cloud Compute) but users are barely touching it - only 10% utilization. Translation: Apple has the hardware for AI, but hasn't built features compelling enough to make people actually use it. This is the gap between "building AI infrastructure" and "making AI useful." It's a cautionary tale for the entire industry: the hard part isn't building AI capability - it's creating demand for it through genuinely useful products.</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== SECTION 5: GRID & ROBOTS ===== -->
+  <section class="section" id="sec-grid" data-section-id="sec-grid">
+    <div class="section-header">
+      <div class="section-icon">&#9889;</div>
+      <div class="section-title">Grid Rebuild &amp; Robots</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">4 items</span>
+    </div>
+
+    <article class="item" id="item-21">
+      <div class="item-header">
+        <span class="item-num">21</span>
+        <div class="item-body">
+          <div class="item-original">AI demand is reviving high-voltage 765-kV power lines not built since the 1980s, with <button class="jargon" data-term="PJM" onclick="event.stopPropagation()">PJM</button> approving $11.8 billion in expansion.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>AI data centers need so much electricity that utilities are building a type of ultra-high-voltage power line (765,000 volts) that hasn't been constructed in 40 years. <button class="jargon" data-term="PJM" onclick="event.stopPropagation()">PJM</button> is the grid operator for 13 US states + DC, serving 65 million people. Their $11.8 billion approval isn't speculative - it's contracted infrastructure. For perspective: a single large AI data center can use as much electricity as a small city. The grid wasn't designed for this, and it's being rebuilt from the transmission level up.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-22">
+      <div class="item-header">
+        <span class="item-num">22</span>
+        <div class="item-body">
+          <div class="item-original">Compute is now a traded commodity, with Ornn and Kalshi launching the first <button class="jargon" data-term="CFTC" onclick="event.stopPropagation()">CFTC</button>-regulated H100 price contracts.</div>
+        </div>
+        <div class="item-actions"><a href="https://kalshi.com" target="_blank" rel="noopener" class="source-btn" title="Kalshi Exchange">Kalshi &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>You can now trade GPU computing power like oil futures on regulated exchanges. Ornn and Kalshi launched contracts letting you bet on (or hedge against) the future price of Nvidia H100 GPU time. "<button class="jargon" data-term="CFTC" onclick="event.stopPropagation()">CFTC</button>-regulated" means the US Commodity Futures Trading Commission oversees these markets, giving them the same legal legitimacy as corn or crude oil futures. Compute has officially graduated from "tech resource" to "commodity" - the same journey oil took in the 1980s. (Note: The author discloses a financial interest in Ornn.)</p></div>
+        <div class="walkthrough">
+          <div class="walkthrough-step"><span class="step-num">1</span><div>Go to <a href="https://kalshi.com" target="_blank" style="color:var(--accent-link)">kalshi.com</a> and search for "GPU" or "H100." You'll see event contracts structured as yes/no bets on future compute prices - for example, "Will H100 spot price exceed $X by Q3 2026?" Each contract trades between $0.01 and $1.00, where the price reflects the market's probability estimate.</div></div>
+          <div class="walkthrough-step"><span class="step-num">2</span><div>On <a href="https://ornn.com" target="_blank" style="color:var(--accent-link)">ornn.com</a>, the interface is more like a traditional futures exchange. You'll see H100 compute contracts with bid/ask spreads, settlement dates, and historical price charts - the same structure you'd find on a commodities exchange for oil or wheat. No account needed to browse prices.</div></div>
+          <div class="walkthrough-step"><span class="step-num">3</span><div><strong>What to look for:</strong> Compare spot prices (what compute costs now) vs. forward prices (what the market thinks it will cost in 6 months). If forwards trade higher, the market expects a compute shortage. If lower, supply is catching up to demand. This spread is now a tradeable insight.</div></div>
+          <p class="walkthrough-note">Browsing is free. Account + KYC required to trade. Minimum trades start at ~$1.</p>
+        </div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-23">
+      <div class="item-header">
+        <span class="item-num">23</span>
+        <div class="item-body">
+          <div class="item-original">AGIBOT unveiled a full humanoid portfolio at MWC with a live store demonstration.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>AGIBOT showed a complete lineup of humanoid robots at MWC Barcelona, including a live demonstration in a retail setting. The key word is "portfolio" - this isn't one prototype, it's a product catalog with different models for different jobs. We're past the era of "look what our robot can do in a lab" and into "here's our catalog, which model do you want to order?" The shift from demo to product line is the commercialization tipping point.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-24">
+      <div class="item-header">
+        <span class="item-num">24</span>
+        <div class="item-body">
+          <div class="item-original">Xiaomi's humanoid is being tested in a real car factory, running 3 hours at 90%+ accuracy on the production line.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Xiaomi (one of the world's largest electronics companies - they make phones, TVs, scooters, and now cars) is testing its humanoid robot on an actual car production line. Three hours of continuous operation at 90%+ accuracy is a real benchmark, not a cherry-picked demo. For context: most factory robots today are bolted-down arms that repeat one motion. A humanoid that can move around the factory floor and handle varied tasks is a fundamentally different category of automation.</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== SECTION 6: AEROSPACE ===== -->
+  <section class="section" id="sec-aerospace" data-section-id="sec-aerospace">
+    <div class="section-header">
+      <div class="section-icon">&#9730;</div>
+      <div class="section-title">Aerospace</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">3 items</span>
+    </div>
+
+    <article class="item" id="item-25">
+      <div class="item-header">
+        <span class="item-num">25</span>
+        <div class="item-body">
+          <div class="item-original">Hypersonix flew its DART AE at Mach 8 - the first fully 3D-printed hydrogen-powered hypersonic aircraft.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>An Australian company flew the first aircraft that combines three frontier technologies: entirely 3D-printed construction, hydrogen fuel (zero carbon emissions), and hypersonic speed (Mach 8 = ~6,100 mph / ~9,800 km/h). For perspective, a flight from New York to London at Mach 8 would take about 35 minutes. 3D-printing the airframe dramatically cuts manufacturing cost and time. Hydrogen fuel means no carbon emissions. If this scales, it could reshape both military aviation and eventually commercial flight.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-26">
+      <div class="item-header">
+        <span class="item-num">26</span>
+        <div class="item-body">
+          <div class="item-original">Starpath unveiled nanometer-thin space solar panels at 73 grams per square meter.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Space solar panels that weigh only 73 grams per square meter - roughly the weight of a few sheets of paper. Current space solar panels weigh 10-50x more. Why weight matters in space: every gram costs money to launch. At SpaceX's current launch costs, lighter panels directly translate to cheaper space-based solar power. This is one of the enabling technologies for truly massive space solar farms, which could beam energy down to Earth or power orbital computing facilities.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-27">
+      <div class="item-header">
+        <span class="item-num">27</span>
+        <div class="item-body">
+          <div class="item-original">SpaceX deployed 54 Starlink satellites in bicoastal launches in a single day.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>SpaceX launched from both US coasts in a single day, deploying 54 Starlink internet satellites. "Bicoastal" means separate launches from Cape Canaveral (Florida) and Vandenberg (California). Launches are becoming routine enough to run in parallel - this is space logistics, not space exploration. Think UPS, not NASA. Starlink now has 7,000+ satellites providing internet globally, with significant military applications (as seen with the Starlink-connected LUCAS drones mentioned in recent issues).</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== SECTION 7: BIOLOGY ===== -->
+  <section class="section" id="sec-bio" data-section-id="sec-bio">
+    <div class="section-header">
+      <div class="section-icon">&#9764;</div>
+      <div class="section-title">Biological Source Code</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">4 items</span>
+    </div>
+
+    <article class="item" id="item-28">
+      <div class="item-header">
+        <span class="item-num">28</span>
+        <div class="item-body">
+          <div class="item-original">The first trial combining fetal surgery with stem cells for spina bifida showed reversal of hindbrain herniation in all six patients.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Spina bifida is a birth defect where the spine doesn't close properly during development, causing the brain to herniate (push through the skull base). Doctors performed surgery on babies <em>while still in the womb</em>, combining it with stem cell therapy. The result: the brain herniation reversed in all six patients. "All six of six" is remarkable for a first-in-human trial - most new treatments show mixed results initially. If this holds in larger trials, it could become standard care and prevent lifelong disability for thousands of children born with spina bifida each year.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-29">
+      <div class="item-header">
+        <span class="item-num">29</span>
+        <div class="item-body">
+          <div class="item-original">An iron nanomaterial destroyed cancer cells from within while sparing healthy tissue.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>A new material made of iron nanoparticles (particles thousands of times smaller than a human hair) can kill cancer cells from the inside while leaving healthy cells alone. Most current cancer treatments - chemotherapy and radiation - are blunt instruments that damage everything. A targeted approach that only kills cancer cells would be a paradigm shift in oncology. This is early-stage (likely preclinical or early clinical), but the mechanism - selective destruction of only malignant cells - is the holy grail of cancer treatment.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-30">
+      <div class="item-header">
+        <span class="item-num">30</span>
+        <div class="item-body">
+          <div class="item-original">A dual-cell therapy paired lab-grown beta cells with engineered immune cells to cure type 1 diabetes without lifelong drugs.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Type 1 diabetes occurs when the immune system destroys the pancreas's insulin-producing beta cells. Current treatments require either daily insulin injections (for life) or beta cell transplants plus immunosuppressant drugs (which have serious side effects). This new approach solves both problems: lab-grown beta cells produce insulin, while engineered immune cells act as bodyguards that protect the new beta cells from the patient's immune system. No daily injections, no immunosuppressants. If validated in larger trials, this could functionally cure type 1 diabetes.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-31">
+      <div class="item-header">
+        <span class="item-num">31</span>
+        <div class="item-body">
+          <div class="item-original">A milk-protein film decomposed in soil within 13 weeks.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Researchers created a food packaging material made from milk proteins (casein) that completely breaks down in soil within 13 weeks. For context: conventional plastic packaging takes 400-1,000 years to decompose. "Even packaging is being debugged" is Alex's way of saying that the same engineering mindset being applied to AI and biology is now tackling mundane but massive problems like plastic waste. The question is always whether lab results like this can scale to industrial production at competitive cost.</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== SECTION 8: PHASE SHIFT ===== -->
+  <section class="section" id="sec-shift" data-section-id="sec-shift">
+    <div class="section-header">
+      <div class="section-icon">&#8644;</div>
+      <div class="section-title">The Phase Shift</div>
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="section-original-link">View original &rarr;</a>
+      <span class="section-count">3 items</span>
+    </div>
+
+    <article class="item" id="item-32">
+      <div class="item-header">
+        <span class="item-num">32</span>
+        <div class="item-body">
+          <div class="item-original">China's vehicles are now 12% electric, with fuel sales down 5.7%.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>One out of every eight vehicles on Chinese roads is now electric, and gasoline sales are already declining 5.7%. China is further along the EV transition than most people outside the country realize. Technology adoption follows an S-curve: slow at first, then explosive once it crosses ~10-15%. At 12%, China has crossed that inflection point. The decline in fuel sales isn't a forecast - it's already happening. This has implications for oil markets, geopolitics (less oil dependence), and the auto industry globally.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-33">
+      <div class="item-header">
+        <span class="item-num">33</span>
+        <div class="item-body">
+          <div class="item-original">Podcasts have surpassed AM/FM talk radio in US spoken-word listening for the first time.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>More Americans now listen to spoken-word podcasts than traditional AM/FM talk radio. This is a structural shift that took about 20 years (podcasting started around 2004). The old broadcast model - a few voices reaching millions through licensed spectrum - has officially lost to the internet model: anyone can publish, listeners choose on demand. This matters because it's a pattern that repeats across media: newspapers &rarr; blogs, TV &rarr; YouTube, radio &rarr; podcasts. Each time, the gatekeepers lose and creators gain direct audience access.</p></div>
+      </div></div>
+    </article>
+
+    <article class="item" id="item-34">
+      <div class="item-header">
+        <span class="item-num">34</span>
+        <div class="item-body">
+          <div class="item-original">Marc Andreessen reports that in Silicon Valley many people who favored government control of AI are now opposed to it.</div>
+        </div>
+        <div class="item-actions"><a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" rel="noopener" class="source-btn">Source &rarr;</a></div>
+      </div>      <div class="item-explanation"><div class="explanation-inner"><div class="explanation-divider"></div>
+        <div class="wtm"><h4>What This Means</h4><p>Marc Andreessen (co-founder of Netscape, co-founder of VC firm a16z, one of tech's most influential voices) says the mood in Silicon Valley has shifted. People who previously wanted the government to regulate AI are now opposed to government involvement. The likely driver: as AI becomes genuinely powerful, the Anthropic-Pentagon showdown (see Thread above) showed tech leaders what government control actually looks like in practice - demands for surveillance access and weapons integration. The abstract idea of "AI safety regulation" became concrete, and many didn't like what they saw.</p></div>
+      </div></div>
+    </article>
+  </section>
+  <!-- ===== CLOSING LINE ===== -->
+  <div class="closing">
+    <p class="quote">&ldquo;The fastest way to decentralize power is to give everyone a reason to want it.&rdquo;</p>
+    <p class="attr">- Dr. Alex Wissner-Gross, closing line</p>
+  </div>
+
+  <!-- ===== JARGON DECODER ===== -->
+  <section class="jargon-section" id="jargon">
+    <h2>Jargon Decoder</h2>
+    <p>Terms Alex assumes you know. Now you do.</p>
+
+    <div class="jargon-grid">
+      <div class="jargon-item" id="def-lean-formalization">
+        <div class="jargon-term">Lean Formalization</div>
+        <div class="jargon-def">Translating a mathematical proof into code in the Lean programming language, where a computer verifies every logical step is correct. Like spell-check, but for math.</div>
+      </div>
+      <div class="jargon-item" id="def-fields-medal">
+        <div class="jargon-term">Fields Medal</div>
+        <div class="jargon-def">The highest honor in mathematics, awarded every 4 years to mathematicians under 40. Often called "math's Nobel Prize" (math has no actual Nobel).</div>
+      </div>
+      <div class="jargon-item" id="def-rl-compute">
+        <div class="jargon-term">RL Compute</div>
+        <div class="jargon-def">Computing power spent on Reinforcement Learning - where an AI learns by trial and error (like playing a game millions of times) rather than studying examples.</div>
+      </div>
+      <div class="jargon-item" id="def-tokens-per-second">
+        <div class="jargon-term">Tokens per Second</div>
+        <div class="jargon-def">Speed measure for AI text generation. Each "token" is roughly &frac34; of a word. 950 tok/s means generating ~700 words per second.</div>
+      </div>
+      <div class="jargon-item" id="def-euv-lithography">
+        <div class="jargon-term">EUV Lithography</div>
+        <div class="jargon-def">Extreme Ultraviolet Lithography - the most advanced chip-making technology. Uses ultra-short wavelength light to etch circuits at nanometer scale. Only ASML makes these machines (~$380M each).</div>
+      </div>
+      <div class="jargon-item" id="def-gaa">
+        <div class="jargon-term">GAA (Gate-All-Around)</div>
+        <div class="jargon-def">Next-generation transistor design where the gate wraps entirely around the channel (instead of sitting on top). Better power efficiency and performance at tiny sizes like 2nm.</div>
+      </div>
+      <div class="jargon-item" id="def-tops">
+        <div class="jargon-term">TOPS</div>
+        <div class="jargon-def">Trillion Operations Per Second - a measure of AI processing power on a chip. 50 TOPS means 50 trillion math operations every second, dedicated to AI tasks.</div>
+      </div>
+      <div class="jargon-item" id="def-npu">
+        <div class="jargon-term">NPU</div>
+        <div class="jargon-def">Neural Processing Unit - a specialized chip built just for AI workloads. Separate from the CPU (general computing) and GPU (graphics). Optimized for the matrix math that AI models need.</div>
+      </div>
+      <div class="jargon-item" id="def-cftc">
+        <div class="jargon-term">CFTC</div>
+        <div class="jargon-def">Commodity Futures Trading Commission - the US federal agency that regulates derivatives and futures markets. If they regulate it, it's officially a commodity (like oil, gold, or corn).</div>
+      </div>
+      <div class="jargon-item" id="def-sha-256">
+        <div class="jargon-term">SHA-256</div>
+        <div class="jargon-def">A cryptographic hash function. Takes any input and produces a fixed-length code that's practically impossible to reverse. Used in Bitcoin, HTTPS, and digital signatures.</div>
+      </div>
+      <div class="jargon-item" id="def-iron-dome">
+        <div class="jargon-term">Iron Dome</div>
+        <div class="jargon-def">Israel's existing missile defense system. Uses physical interceptor missiles (~$50,000 each) to shoot down incoming rockets. Iron Beam (laser) is its potential successor at $4/shot.</div>
+      </div>
+      <div class="jargon-item" id="def-pjm">
+        <div class="jargon-term">PJM</div>
+        <div class="jargon-def">The regional grid operator managing electricity transmission for 13 US states + DC, serving 65 million people. When PJM approves $11.8B in expansion, it's real contracted infrastructure.</div>
+      </div>
+      <div class="jargon-item" id="def-adderboard">
+        <div class="jargon-term">AdderBoard</div>
+        <div class="jargon-def">A competition to build the smallest possible AI model (fewest parameters) that can accurately add 10-digit numbers. Tracks how fast model efficiency is improving - from 121 parameters to 36 in one week.</div>
+      </div>
+      <div class="jargon-item" id="def-neural-engine">
+        <div class="jargon-term">Neural Engine</div>
+        <div class="jargon-def">Apple's dedicated AI accelerator chip, built into every M-series Mac and recent iPhone. Extremely power-efficient (~80x more than Nvidia A100) but poorly documented for direct use.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-cta">
+    <h3>This is a proof of concept.</h3>
+    <p>The Outer Loop is a companion to <a href="https://theinnermostloop.substack.com" target="_blank" style="color: var(--accent-link); text-decoration: underline;">The Innermost Loop</a> by Dr. Alex Wissner-Gross. Every item links back to the original. We expand the funnel - we don't replace it.</p>
+    <div class="footer-links">
+      <a href="https://theinnermostloop.substack.com/p/welcome-to-march-3-2026" target="_blank" class="primary">Read the Original</a>
+      <a href="https://theinnermostloop.substack.com/" target="_blank">Subscribe to The Innermost Loop</a>
+    </div>
+  </div>
+  <p class="footer-credit">
+    The Outer Loop is an independent companion publication. All original content and curation belongs to
+    <a href="https://alexwg.org" target="_blank">Dr. Alex Wissner-Gross</a>.
+    <br>Built as a proof of concept - March 2026.
+  </p>
+</footer>
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="bottom-nav" id="bottomnav">
+  <a href="#summary" class="bottom-nav-item active" data-section="summary">
+    <span class="bottom-nav-icon">&#9776;</span>
+    <span class="bottom-nav-label">Summary</span>
+  </a>
+  <a href="#jargon" class="bottom-nav-item" data-section="jargon">
+    <span class="bottom-nav-icon">&#128218;</span>
+    <span class="bottom-nav-label">Jargon</span>
+  </a>
+</nav>
+<!-- ===== JARGON TOOLTIP ===== -->
+<div id="tooltip" role="tooltip" aria-hidden="true">
+  <div class="tt-term"></div>
+  <div class="tt-def"></div>
+</div>
+<!-- ===== SCRIPTS ===== -->
+<script>
+// ===== JARGON DEFINITIONS (for inline tooltips) =====
+const jargonDefs = {
+  'Lean Formalization': 'Translating a mathematical proof into code in the Lean programming language, where a computer verifies every logical step is correct. Like spell-check, but for math.',
+  'Fields Medal': "The highest honor in mathematics, awarded every 4 years to mathematicians under 40. Often called \"math's Nobel Prize.\"",
+  'RL Compute': 'Computing power spent on Reinforcement Learning - where an AI learns by trial and error (like playing a game millions of times) rather than studying examples.',
+  'Tokens per Second': 'Speed measure for AI text generation. Each "token" is roughly \u00BE of a word. 950 tok/s means generating ~700 words per second.',
+  'EUV Lithography': 'Extreme Ultraviolet Lithography - the most advanced chip-making technology. Uses ultra-short wavelength light to etch circuits at nanometer scale. Only ASML makes these machines (~$380M each).',
+  'GAA': 'Gate-All-Around - next-generation transistor design where the gate wraps entirely around the channel. Better power efficiency and performance at tiny sizes like 2nm.',
+  'TOPS': 'Trillion Operations Per Second - a measure of AI processing power on a chip. 50 TOPS means 50 trillion math operations every second, dedicated to AI tasks.',
+  'NPU': 'Neural Processing Unit - a specialized chip built just for AI workloads. Separate from the CPU (general computing) and GPU (graphics). Optimized for the matrix math that AI models need.',
+  'CFTC': 'Commodity Futures Trading Commission - the US federal agency that regulates derivatives and futures markets. If they regulate it, it\'s officially a commodity.',
+  'SHA-256': 'A cryptographic hash function. Takes any input and produces a fixed-length code that\'s practically impossible to reverse. Used in Bitcoin, HTTPS, and digital signatures.',
+  'Iron Dome': "Israel's existing missile defense system. Uses physical interceptor missiles (~$50,000 each) to shoot down incoming rockets. Iron Beam (laser) is its potential successor at $4/shot.",
+  'PJM': 'The regional grid operator managing electricity transmission for 13 US states + DC, serving 65 million people.',
+  'AdderBoard': 'A competition to build the smallest possible AI model (fewest parameters) that can accurately add 10-digit numbers. Tracks how fast model efficiency is improving.',
+  'Neural Engine': "Apple's dedicated AI accelerator chip, built into every M-series Mac and recent iPhone. Extremely power-efficient (~80x more than Nvidia A100) but poorly documented for direct use.",
+  'EUV': 'Extreme Ultraviolet Lithography - the most advanced chip-making technology. Uses ultra-short wavelength light to etch circuits at nanometer scale. Only ASML makes these machines (~$380M each).'
+};
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+  const pre = btn.closest('.try-block').querySelector('pre');
+  const lines = pre.textContent.split('\n')
+    .filter(line => !line.trim().startsWith('#'))
+    .filter(line => line.trim().length > 0)
+    .join('\n');
+  navigator.clipboard.writeText(lines).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.classList.contains('dark');
+  html.classList.replace(isDark ? 'dark' : 'light', isDark ? 'light' : 'dark');
+  localStorage.setItem('ol-theme', isDark ? 'light' : 'dark');
+  // Update toggle button icon
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.innerHTML = isDark ? '&#9788;' : '&#9790;';
+}
+
+// ===== READING PROGRESS BAR =====
+window.addEventListener('scroll', () => {
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+  const bar = document.getElementById('progress');
+  if (bar) bar.style.width = scrolled + '%';
+}, { passive: true });
+
+// ===== NAV AUTO-HIDE ON SCROLL DOWN =====
+let lastScrollY = 0;
+let navHidden = false;
+const topnav = document.getElementById('topnav');
+
+if (topnav) {
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY;
+    if (currentY > lastScrollY && currentY > 120 && !navHidden) {
+      topnav.classList.add('nav-hidden');
+      navHidden = true;
+    } else if (currentY < lastScrollY && navHidden) {
+      topnav.classList.remove('nav-hidden');
+      navHidden = false;
+    }
+    lastScrollY = currentY;
+  }, { passive: true });
+}
+
+// ===== SCROLL SPY (active nav + URL hash) =====
+const allSections = document.querySelectorAll('.section, .summary, .jargon-section');
+const navLinks = document.querySelectorAll('#topnav a');
+
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      if (id) {
+        // Update nav
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+        // Update URL hash (silent)
+        history.replaceState(null, '', '#' + id);
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+allSections.forEach(sec => sectionObserver.observe(sec));
+
+// ===== JARGON TOOLTIP =====
+const tooltip = document.getElementById('tooltip');
+let tooltipTimeout = null;
+
+function showTooltip(btn, term) {
+  const def = jargonDefs[term];
+  if (!def) return;
+  tooltip.querySelector('.tt-term').textContent = term;
+  tooltip.querySelector('.tt-def').textContent = def;
+  tooltip.classList.add('visible');
+  tooltip.setAttribute('aria-hidden', 'false');
+
+  // Position
+  const rect = btn.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+  let top = rect.bottom + 8;
+
+  // Keep within viewport
+  if (left < 12) left = 12;
+  if (left + tooltipRect.width > window.innerWidth - 12) left = window.innerWidth - tooltipRect.width - 12;
+  if (top + tooltipRect.height > window.innerHeight - 12) {
+    top = rect.top - tooltipRect.height - 8;
+  }
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + window.scrollY + 'px';
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  tooltip.setAttribute('aria-hidden', 'true');
+}
+
+// Attach jargon tooltip events
+document.querySelectorAll('button.jargon').forEach(btn => {
+  const term = btn.dataset.term;
+
+  btn.addEventListener('mouseenter', () => {
+    tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300);
+  });
+  btn.addEventListener('mouseleave', () => {
+    clearTimeout(tooltipTimeout);
+    hideTooltip();
+  });
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(tooltipTimeout);
+    if (tooltip.classList.contains('visible')) {
+      hideTooltip();
+    } else {
+      showTooltip(btn, term);
+    }
+  });
+  btn.addEventListener('focus', () => {
+    tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300);
+  });
+  btn.addEventListener('blur', () => {
+    clearTimeout(tooltipTimeout);
+    hideTooltip();
+  });
+});
+
+// Close tooltip on click elsewhere
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.jargon') && !e.target.closest('#tooltip')) {
+    hideTooltip();
+  }
+});
+
+// ===== DEEP LINK ON PAGE LOAD =====
+function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const target = document.querySelector(hash);
+  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+}
+
+// ===== MOBILE BOTTOM NAV ACTIVE STATE =====
+const bottomNav = document.getElementById('bottomnav');
+if (bottomNav) {
+  const bottomLinks = bottomNav.querySelectorAll('.bottom-nav-item[data-section]');
+  const bottomObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        bottomLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.section === entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  document.querySelectorAll('#summary, #jargon').forEach(el => {
+    if (el) bottomObserver.observe(el);
+  });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  handleDeepLink();
+  // Set correct theme icon
+  const isDark = document.documentElement.classList.contains('dark');
+  const themeBtn = document.querySelector('.theme-toggle');
+  if (themeBtn) themeBtn.innerHTML = isDark ? '&#9790;' : '&#9788;';
+});
+</script>
+
+</body>
+</html>

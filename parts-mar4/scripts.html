@@ -1,0 +1,163 @@
+<!-- ===== SCRIPTS ===== -->
+<script>
+// ===== JARGON DEFINITIONS =====
+const jargonDefs = {
+  'Hallucinations': 'When an AI confidently states things that aren\'t true. Not lying (no intent) but confabulating - filling gaps with plausible-sounding fiction.',
+  'HealthBench': 'A benchmark for evaluating AI performance on clinical medical questions. "Hard" indicates the most difficult subset requiring deep medical reasoning.',
+  'ARR': 'Annual Recurring Revenue - the standard metric for subscription software companies. $100M ARR = $100 million/year from ongoing subscriptions.',
+  '18A': 'Intel\'s manufacturing process node, roughly equivalent to 1.8 nanometers. Smaller = more transistors per chip = more performance per watt.',
+  'Ferroelectric Transistor': 'A transistor using ferroelectric materials that can switch states at extremely low voltages. Enables smaller, more energy-efficient chips.',
+  'GLP-1': 'Glucagon-Like Peptide 1 - a hormone regulating appetite and blood sugar. Drugs mimicking it (Ozempic, Wegovy) cause significant weight loss.',
+  'Lithopanspermia': 'The hypothesis that life can travel between planets on rocks ejected by asteroid impacts. Life hitchhiking across space on debris.',
+  'PNAS': 'Proceedings of the National Academy of Sciences - one of the most prestigious peer-reviewed scientific journals.',
+  'UAP': 'Unidentified Anomalous Phenomena - the official US government term replacing "UFO." Reflects a shift from dismissal to systematic investigation.',
+  'Artemis Program': 'NASA\'s program to return humans to the Moon. Uses SpaceX\'s Starship as the lunar lander vehicle.'
+};
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+  const pre = btn.closest('.try-block').querySelector('pre');
+  const lines = pre.textContent.split('\n')
+    .filter(line => !line.trim().startsWith('#'))
+    .filter(line => line.trim().length > 0)
+    .join('\n');
+  navigator.clipboard.writeText(lines).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.classList.contains('dark');
+  html.classList.replace(isDark ? 'dark' : 'light', isDark ? 'light' : 'dark');
+  localStorage.setItem('ol-theme', isDark ? 'light' : 'dark');
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.innerHTML = isDark ? '&#9788;' : '&#9790;';
+}
+
+// ===== READING PROGRESS BAR =====
+window.addEventListener('scroll', () => {
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+  const bar = document.getElementById('progress');
+  if (bar) bar.style.width = scrolled + '%';
+}, { passive: true });
+
+// ===== NAV AUTO-HIDE ON SCROLL DOWN =====
+let lastScrollY = 0;
+let navHidden = false;
+const topnav = document.getElementById('topnav');
+
+if (topnav) {
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY;
+    if (currentY > lastScrollY && currentY > 120 && !navHidden) {
+      topnav.classList.add('nav-hidden');
+      navHidden = true;
+    } else if (currentY < lastScrollY && navHidden) {
+      topnav.classList.remove('nav-hidden');
+      navHidden = false;
+    }
+    lastScrollY = currentY;
+  }, { passive: true });
+}
+
+// ===== SCROLL SPY =====
+const allSections = document.querySelectorAll('.section, .summary, .jargon-section');
+const navLinks = document.querySelectorAll('#topnav a');
+
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      if (id) {
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+        history.replaceState(null, '', '#' + id);
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+allSections.forEach(sec => sectionObserver.observe(sec));
+
+// ===== JARGON TOOLTIP =====
+const tooltip = document.getElementById('tooltip');
+let tooltipTimeout = null;
+
+function showTooltip(btn, term) {
+  const def = jargonDefs[term];
+  if (!def) return;
+  tooltip.querySelector('.tt-term').textContent = term;
+  tooltip.querySelector('.tt-def').textContent = def;
+  tooltip.classList.add('visible');
+  tooltip.setAttribute('aria-hidden', 'false');
+  const rect = btn.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+  let top = rect.bottom + 8;
+  if (left < 12) left = 12;
+  if (left + tooltipRect.width > window.innerWidth - 12) left = window.innerWidth - tooltipRect.width - 12;
+  if (top + tooltipRect.height > window.innerHeight - 12) top = rect.top - tooltipRect.height - 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + window.scrollY + 'px';
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  tooltip.setAttribute('aria-hidden', 'true');
+}
+
+document.querySelectorAll('button.jargon').forEach(btn => {
+  const term = btn.dataset.term;
+  btn.addEventListener('mouseenter', () => { tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300); });
+  btn.addEventListener('mouseleave', () => { clearTimeout(tooltipTimeout); hideTooltip(); });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); clearTimeout(tooltipTimeout); tooltip.classList.contains('visible') ? hideTooltip() : showTooltip(btn, term); });
+  btn.addEventListener('focus', () => { tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300); });
+  btn.addEventListener('blur', () => { clearTimeout(tooltipTimeout); hideTooltip(); });
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.jargon') && !e.target.closest('#tooltip')) hideTooltip();
+});
+
+// ===== DEEP LINK =====
+function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const target = document.querySelector(hash);
+  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+}
+
+// ===== MOBILE NAV =====
+const bottomNav = document.getElementById('bottomnav');
+if (bottomNav) {
+  const bottomLinks = bottomNav.querySelectorAll('.bottom-nav-item[data-section]');
+  const bottomObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        bottomLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.section === entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('#summary, #jargon').forEach(el => { if (el) bottomObserver.observe(el); });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  handleDeepLink();
+  const isDark = document.documentElement.classList.contains('dark');
+  const themeBtn = document.querySelector('.theme-toggle');
+  if (themeBtn) themeBtn.innerHTML = isDark ? '&#9790;' : '&#9788;';
+});
+</script>
+
+</body>
+</html>

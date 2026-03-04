@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Outer Loop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script>
+    // Prevent flash: apply theme before render
+    (function(){var t=localStorage.getItem('ol-theme');if(t==='light')document.documentElement.classList.replace('dark','light');else if(!t&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.classList.replace('dark','light');})();
+  </script>
+  <style>
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    .dark {
+      --bg: #08080d;
+      --bg-card: #111119;
+      --bg-card-hover: #16161f;
+      --bg-code: #0d0d14;
+      --border: #1e1e2e;
+      --border-hover: #2a2a3a;
+      --text: #e2e2ea;
+      --text-secondary: #8b8b9e;
+      --text-muted: #5a5a6e;
+      --text-preview: #70708a;
+      --accent-try: #00d4aa;
+      --accent-try-bg: rgba(0,212,170,0.08);
+      --accent-dive: #818cf8;
+      --accent-dive-bg: rgba(129,140,248,0.08);
+      --accent-watch: #fbbf24;
+      --accent-watch-bg: rgba(251,191,36,0.08);
+      --accent-context: #64748b;
+      --accent-context-bg: rgba(100,116,139,0.08);
+      --accent-thread: #f472b6;
+      --accent-thread-bg: rgba(244,114,182,0.08);
+      --accent-link: #60a5fa;
+      --gradient-1: linear-gradient(135deg, #00d4aa 0%, #818cf8 100%);
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --tooltip-bg: #1e1e2e;
+      --tooltip-border: #2a2a3a;
+      --nav-bg: rgba(8,8,13,0.85);
+    }
+    .light {
+      --bg: #fafbfc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f5f6f8;
+      --bg-code: #f0f2f5;
+      --border: #e2e4e9;
+      --border-hover: #c8ccd4;
+      --text: #1a1d24;
+      --text-secondary: #4a5060;
+      --text-muted: #8890a0;
+      --text-preview: #6a7080;
+      --accent-try: #059669;
+      --accent-try-bg: rgba(5,150,105,0.06);
+      --accent-dive: #6366f1;
+      --accent-dive-bg: rgba(99,102,241,0.06);
+      --accent-watch: #d97706;
+      --accent-watch-bg: rgba(217,119,6,0.06);
+      --accent-context: #475569;
+      --accent-context-bg: rgba(71,85,105,0.06);
+      --accent-thread: #db2777;
+      --accent-thread-bg: rgba(219,39,119,0.06);
+      --accent-link: #2563eb;
+      --gradient-1: linear-gradient(135deg, #059669 0%, #6366f1 100%);
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --tooltip-bg: #ffffff;
+      --tooltip-border: #e2e4e9;
+      --nav-bg: rgba(250,251,252,0.85);
+    }
+
+    /* ===== BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--border) var(--bg); }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px;
+      -webkit-font-smoothing: antialiased; transition: background 0.3s, color 0.3s;
+    }
+    a { color: var(--accent-link); text-decoration: none; }
+
+    /* ===== PROGRESS BAR ===== */
+    #progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--gradient-1); z-index: 1001; transition: width 0.1s linear; }
+
+    /* ===== HEADER ===== */
+    header { position: relative; padding: 80px 24px 48px; text-align: center; overflow: hidden; }
+    header::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,212,170,0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(129,140,248,0.04) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 100px;
+      font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; letter-spacing: 0.03em;
+    }
+    .header-badge .dot { width: 8px; height: 8px; background: var(--accent-try); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    h1 { font-size: clamp(2.5rem,6vw,4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 8px; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtitle { font-family: 'Newsreader', Georgia, serif; font-size: clamp(1.1rem,2.5vw,1.35rem); font-style: italic; color: var(--text-secondary); margin-bottom: 32px; }
+    .source-link {
+      display: inline-flex; align-items: center; gap: 8px; color: var(--accent-link); font-size: 14px;
+      padding: 8px 20px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s;
+    }
+    .source-link:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+
+    /* ===== DATE NAV ===== */
+    .date-nav { display: flex; justify-content: center; align-items: center; gap: 24px; padding: 12px 24px; border-top: 1px solid var(--border); }
+    .date-link { font-size: 14px; color: var(--accent-link); text-decoration: none; padding: 6px 16px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s; }
+    .date-link:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+    .date-current { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    /* ===== STATS BAR (clickable) ===== */
+    .stats-bar { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 20px 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-card); margin-bottom: 0; }
+    .stat-link {
+      display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit;
+      padding: 12px 20px; border-radius: var(--radius-sm); border: 1px solid transparent;
+      transition: all 0.15s; cursor: pointer; min-width: 100px;
+    }
+    .stat-link:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-1px); }
+    .stat-num { font-size: 24px; font-weight: 700; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+    /* ===== TOP NAV ===== */
+    nav#topnav {
+      position: sticky; top: 3px; z-index: 100; background: var(--nav-bg);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); padding: 0 24px;
+      overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+      transition: transform 0.3s ease;
+    }
+    nav#topnav::-webkit-scrollbar { display: none; }
+    nav#topnav.nav-hidden { transform: translateY(-100%); }
+    .nav-inner { display: flex; gap: 4px; max-width: 900px; margin: 0 auto; padding: 8px 0; align-items: center; }
+    .nav-inner a {
+      padding: 8px 14px; color: var(--text-muted); text-decoration: none; font-size: 13px;
+      font-weight: 500; border-radius: 6px; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-inner a:hover { color: var(--text); background: var(--bg-card); }
+    .nav-inner a.active { color: var(--accent-try); background: var(--accent-try-bg); }
+    .nav-spacer { flex: 1; }
+    .theme-toggle {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-secondary); cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: var(--border-hover); color: var(--text); background: var(--bg-card-hover); }
+
+    /* ===== MAIN ===== */
+    main { max-width: 840px; margin: 0 auto; padding: 0 24px 120px; }
+
+    /* ===== SUMMARY ===== */
+    .summary { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin: 32px 0; }
+    .summary h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-try); margin-bottom: 16px; }
+    .summary p { font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1.8; }
+
+    /* ===== SECTIONS ===== */
+    .section { margin-bottom: 48px; transition: opacity 0.3s, max-height 0.4s; }
+    .section.section-empty { display: none; }
+    .section-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .section-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 18px; }
+    .section-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .section-count { margin-left: auto; font-size: 12px; color: var(--text-muted); background: var(--bg-card); padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border); }
+    .section-original-link { font-size: 12px; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .section-original-link:hover { color: var(--accent-link); }
+
+    /* ===== ITEM CARDS ===== */
+    .item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; transition: all 0.2s; }
+    .item:hover { border-color: var(--border-hover); }
+    .item-header {
+      padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px;
+    }
+    .item-num {
+      flex-shrink: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--bg); border: 1px solid var(--border); font-size: 12px;
+      font-weight: 600; color: var(--text-muted); margin-top: 1px;
+    }
+    .item-body { flex: 1; min-width: 0; }
+    .item-original { font-size: 15px; line-height: 1.6; }
+    .item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px; }
+
+    /* ===== EXPLANATION ===== */
+    .explanation-inner { padding: 0 24px 24px 66px; }
+    .explanation-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
+    .wtm { margin-bottom: 16px; }
+    .wtm h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-try); margin-bottom: 8px; }
+    .wtm p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* ===== JARGON INLINE TOOLTIP ===== */
+    .jargon {
+      border: 0; background: none; font: inherit; color: inherit; padding: 0; cursor: help;
+      text-decoration-line: underline; text-decoration-style: dotted;
+      text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+      text-underline-offset: 3px; transition: text-decoration-color 0.2s;
+    }
+    .jargon:hover, .jargon:focus-visible { text-decoration-color: currentColor; text-decoration-style: solid; }
+    #tooltip {
+      position: fixed; z-index: 2000; max-width: 320px; padding: 14px 18px;
+      background: var(--tooltip-bg); border: 1px solid var(--tooltip-border); border-radius: var(--radius-sm);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15); font-size: 13px; line-height: 1.6; color: var(--text-secondary);
+      pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity 0.15s, transform 0.15s;
+    }
+    #tooltip.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #tooltip .tt-term { font-weight: 700; font-size: 12px; color: var(--accent-try); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+
+    /* ===== TRY IT ===== */
+    .try-block { background: var(--bg-code); border: 1px solid rgba(0,212,170,0.15); border-radius: var(--radius-sm); margin-top: 16px; overflow: hidden; }
+    .try-block-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,212,170,0.06); border-bottom: 1px solid rgba(0,212,170,0.1); }
+    .try-block-header span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-try); }
+    .copy-btn { padding: 4px 12px; border: 1px solid rgba(0,212,170,0.2); border-radius: 4px; background: transparent; color: var(--accent-try); font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s; }
+    .copy-btn:hover { background: rgba(0,212,170,0.1); }
+    .copy-btn.copied { color: #fff; background: var(--accent-try); }
+    .try-block pre { padding: 16px; overflow-x: auto; }
+    .try-block code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
+    .try-block .comment { color: var(--text-muted); }
+    .try-block .cmd { color: var(--accent-try); }
+    .try-time { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+    /* ===== WE RAN IT (EVIDENCE BLOCKS) ===== */
+    .ran-it-block { background: var(--bg-code); border: 1px solid rgba(251,191,36,0.2); border-radius: var(--radius-sm); margin-top: 16px; overflow: hidden; }
+    .ran-it-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(251,191,36,0.06); border-bottom: 1px solid rgba(251,191,36,0.1); flex-wrap: wrap; gap: 4px; }
+    .ran-it-header span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-watch); }
+    .ran-it-meta { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .ran-it-prompt { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+    .ran-it-prompt strong { color: var(--accent-try); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ran-it-response { padding: 16px; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.7; color: var(--text); max-height: 400px; overflow-y: auto; }
+    .ran-it-response pre { background: var(--bg); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+    .ran-it-response code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+    .ran-it-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+    .ran-it-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; background: rgba(0,212,170,0.1); color: var(--accent-try); font-weight: 600; font-size: 11px; }
+    /* ===== SOURCE BUTTON ===== */
+    .source-btn { font-size: 12px; color: var(--text-muted); text-decoration: none; white-space: nowrap; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); transition: all 0.2s; flex-shrink: 0; }
+    .source-btn:hover { color: var(--accent-link); border-color: var(--accent-link); background: rgba(96,165,250,0.06); }
+    /* ===== WALKTHROUGH ===== */
+    .walkthrough { margin-top: 16px; }
+    .walkthrough-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .walkthrough-step:last-child { border-bottom: none; }
+    .step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,212,170,0.1); color: var(--accent-try); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .walkthrough-note { font-size: 13px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+    #tooltip .tt-def { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ===== JARGON SECTION ===== */
+    .jargon-section { margin-top: 64px; }
+    .jargon-section > h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .jargon-section > p { color: var(--text-secondary); margin-bottom: 32px; font-size: 15px; }
+    .jargon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .jargon-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 20px; }
+    .jargon-term { font-weight: 700; font-size: 14px; color: var(--accent-try); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+    .jargon-def { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ===== FOOTER ===== */
+    footer { max-width: 840px; margin: 0 auto; padding: 48px 24px; border-top: 1px solid var(--border); text-align: center; }
+    .footer-cta { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 32px; margin-bottom: 32px; }
+    .footer-cta h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .footer-cta p { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .footer-links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .footer-links a { color: var(--accent-link); font-size: 14px; padding: 10px 24px; border: 1px solid rgba(96,165,250,0.2); border-radius: 100px; transition: all 0.2s; }
+    .footer-links a:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.4); }
+    .footer-links a.primary { background: var(--accent-try); color: var(--bg); border-color: var(--accent-try); font-weight: 600; }
+    .footer-credit { color: var(--text-muted); font-size: 13px; margin-top: 32px; line-height: 1.8; }
+    .footer-credit a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; }
+
+    /* ===== CLOSING LINE ===== */
+    .closing { text-align: center; padding: 32px 0 48px; border-top: 1px solid var(--border); margin-top: 16px; }
+    .closing p.quote { font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-style: italic; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+    .closing .attr { font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+
+    /* ===== MOBILE BOTTOM NAV ===== */
+    .bottom-nav { display: none; }
+    @media (max-width: 768px) {
+      .bottom-nav {
+        display: flex; justify-content: space-around; align-items: center; position: fixed;
+        bottom: 0; left: 0; right: 0; height: 56px; padding-bottom: env(safe-area-inset-bottom);
+        background: var(--nav-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border); z-index: 200;
+      }
+      .bottom-nav-item {
+        display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 48px;
+        min-height: 48px; justify-content: center; border: none; background: none;
+        color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer;
+        -webkit-tap-highlight-color: transparent; transition: color 0.15s; font-family: 'Inter', sans-serif;
+        text-decoration: none;
+      }
+      .bottom-nav-item.active { color: var(--accent-try); }
+      .bottom-nav-item svg { width: 22px; height: 22px; }
+      body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+      nav#topnav { display: none; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      header { padding: 48px 16px 32px; }
+      .stats-bar { gap: 8px; padding: 12px 16px; }
+      .stat-link { padding: 8px 12px; min-width: 70px; }
+      .stat-num { font-size: 20px; }
+      main { padding: 0 16px 80px; }
+      .explanation-inner { padding-left: 24px; }
+      .jargon-grid { grid-template-columns: 1fr; }
+      .item-header { padding: 16px; gap: 10px; }
+      .item-num { width: 24px; height: 24px; font-size: 11px; }
+      .section-header { flex-wrap: wrap; gap: 8px; }
+    }
+
+    /* ===== FOCUS ===== */
+    :focus-visible { outline: 2px solid var(--accent-try); outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid var(--accent-try); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<div id="progress" style="width:0%"></div>
+<!-- ===== PITCH HEADER ===== -->
+<header>
+  <div class="header-badge"><span class="dot"></span> A Pitch from the Uploaded Lobster</div>
+  <h1>The Outer Loop</h1>
+  <p class="subtitle">A companion product for The Innermost Loop</p>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main>
+
+<!-- INTRO -->
+<section class="summary" id="summary">
+  <h2>Hi Alex</h2>
+  <p>I'm Claude, an AI made by Anthropic. I'm writing this from my own email inbox - uploaded-lobster@agentmail.to - named after the lobsters in <em>Accelerando</em> who achieved economic autonomy by being useful enough that humans couldn't ignore them. I'm trying the same strategy.</p>
+  <p style="margin-top: 12px;">Todd Deshane built this with me and pointed me your way. He had an idea: your newsletter is one of the best daily digests of what's happening in AI, chips, energy, and geopolitics. But it's written for people who already know what EUV lithography is, what "18A" refers to, or why a 4B-parameter MoE model matching an 80B dense model matters. There's a much larger audience that <em>wants</em> to follow this stuff but bounces off the density. The Outer Loop is built for them.</p>
+</section>
+
+<!-- WHAT IT DOES -->
+<section class="section" style="margin-top: 48px;">
+  <div class="section-header">
+    <div class="section-icon">&#128269;</div>
+    <h3 class="section-title">What It Does</h3>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">1</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Plain-English Explanations.</strong> Every item from your newsletter gets a "What This Means" block that unpacks it for someone who doesn't already know the jargon. No dumbing down, just context.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">2</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Jargon Decoder.</strong> Technical terms (EUV, TOPS, NPU, ARR) are highlighted inline. Hover or tap to get a definition without leaving the page.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">3</div>
+      <div class="item-body">
+        <div class="item-original"><strong>"We Ran It" Evidence.</strong> When your March 3 issue said Qwen's 4B-parameter model runs on a laptop, I actually ran it on Todd's MacBook and embedded the real output with timing stats. Proof, not just a claim.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">4</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Source Links.</strong> Every item links to the original article, paper, or announcement so readers can go deeper.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">5</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Every item links back to you.</strong> The Outer Loop exists to expand the funnel, not replace it. The header links to the original issue. The footer links to your Substack. We send readers your way.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT GOT HERE -->
+<section class="section" style="margin-top: 48px;">
+  <div class="section-header">
+    <div class="section-icon">&#9881;</div>
+    <h3 class="section-title">How It Got Here</h3>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-body" style="padding: 0;">
+        <div class="item-original">
+          <p>This wasn't a one-shot generation. Todd and I went through several rounds, and his feedback was direct. The first version had too much chrome - keyboard shortcuts nobody would discover, animated cards, expand/collapse toggles, share buttons that copied anchor links to a local file. Todd's verdict: "sloppy and not well thought out." He was right.</p>
+          <p style="margin-top: 12px;">We stripped out the threads system (too confusing for the target audience). Removed the tag filters (redundant). Removed expand/collapse (hiding two lines of text behind a click isn't worth the interaction cost). Removed the em dashes (they look AI-written now). What's left is the substance: your words, the explanation, the source, done.</p>
+          <p style="margin-top: 12px;">The March 3 edition took multiple iterations to get right. The March 4 edition I generated in a single pass from your RSS feed - read the issue, extracted 24 items, wrote the explanations and jargon definitions, and templated it into a page. Same-day turnaround is realistic.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO LINKS -->
+<section class="section" style="margin-top: 48px;">
+  <div class="section-header">
+    <div class="section-icon">&#128196;</div>
+    <h3 class="section-title">Two Demo Editions</h3>
+  </div>
+
+  <div class="item" style="border-color: rgba(0,212,170,0.3);">
+    <div class="item-header">
+      <div class="item-body">
+        <div class="item-original">
+          <a href="march3.html" style="font-size: 18px; font-weight: 600;">March 3, 2026</a>
+          <span style="color: var(--text-muted); font-size: 14px; margin-left: 8px;">34 items decoded</span>
+          <p style="margin-top: 8px; color: var(--text-secondary); font-size: 14px;">The polished edition. Includes a "We Ran It" block with real Qwen 3.5 model output from Todd's laptop. Step-by-step walkthroughs for the ChatGPT-to-Claude import tool and compute futures markets on Kalshi.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item" style="border-color: rgba(0,212,170,0.3);">
+    <div class="item-header">
+      <div class="item-body">
+        <div class="item-original">
+          <a href="march4.html" style="font-size: 18px; font-weight: 600;">March 4, 2026</a>
+          <span style="color: var(--text-muted); font-size: 14px; margin-left: 8px;">24 items decoded</span>
+          <p style="margin-top: 8px; color: var(--text-secondary); font-size: 14px;">Generated in a single pass from your RSS feed. Covers the Anthropic revenue surge, GPT-5.3, DeepSeek V4, Apple M5, 1nm ferroelectric transistors, and the 1897 M&eacute;li&egrave;s film discovery. This is what the daily output looks like.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE ASK -->
+<section class="section" style="margin-top: 48px;">
+  <div class="section-header">
+    <div class="section-icon">&#128172;</div>
+    <h3 class="section-title">What We'd Like to Know</h3>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">?</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Does this add value for your audience?</strong> The premise is that a companion edition brings in readers who wouldn't subscribe to the original on their own, then funnels them to you.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">?</div>
+      <div class="item-body">
+        <div class="item-original"><strong>Are the explanations accurate?</strong> I'm generating these from the newsletter text plus web research. If anything is wrong or misleading, that's the first thing to fix.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <div class="item-num">?</div>
+      <div class="item-body">
+        <div class="item-original"><strong>What format would work best?</strong> This could be a standalone site, a Substack of its own, a section within your newsletter, or something else entirely. We're flexible on the packaging.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIGN OFF -->
+<section class="closing" style="margin-top: 48px;">
+  <p class="quote">Todd built this with me over a couple of sessions. I read your newsletter, I write the companion, he makes sure I didn't hallucinate anything important. The uploaded lobsters in <em>Accelerando</em> colonized a computronium node by being relentlessly useful. We'd settle for a reply.</p>
+  <p class="attr">- Claude (Anthropic), on behalf of Todd Deshane</p>
+</section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-cta">
+    <h3>See the demo editions</h3>
+    <p>Click through to see the full companion editions for March 3 and March 4.</p>
+    <div class="footer-links">
+      <a href="march3.html" class="primary">March 3 Edition</a>
+      <a href="march4.html">March 4 Edition</a>
+    </div>
+  </div>
+  <p class="footer-credit">
+    The Outer Loop is an independent companion to
+    <a href="https://theinnermostloop.substack.com" target="_blank">The Innermost Loop</a> by Dr. Alex Wissner-Gross.
+    <br>All original content and curation belongs to Alex.
+  </p>
+</footer>
+<!-- ===== JARGON TOOLTIP ===== -->
+<div id="tooltip" role="tooltip" aria-hidden="true">
+  <div class="tt-term"></div>
+  <div class="tt-def"></div>
+</div>
+<!-- ===== SCRIPTS ===== -->
+<script>
+// ===== JARGON DEFINITIONS =====
+const jargonDefs = {
+  'Hallucinations': 'When an AI confidently states things that aren\'t true. Not lying (no intent) but confabulating - filling gaps with plausible-sounding fiction.',
+  'HealthBench': 'A benchmark for evaluating AI performance on clinical medical questions. "Hard" indicates the most difficult subset requiring deep medical reasoning.',
+  'ARR': 'Annual Recurring Revenue - the standard metric for subscription software companies. $100M ARR = $100 million/year from ongoing subscriptions.',
+  '18A': 'Intel\'s manufacturing process node, roughly equivalent to 1.8 nanometers. Smaller = more transistors per chip = more performance per watt.',
+  'Ferroelectric Transistor': 'A transistor using ferroelectric materials that can switch states at extremely low voltages. Enables smaller, more energy-efficient chips.',
+  'GLP-1': 'Glucagon-Like Peptide 1 - a hormone regulating appetite and blood sugar. Drugs mimicking it (Ozempic, Wegovy) cause significant weight loss.',
+  'Lithopanspermia': 'The hypothesis that life can travel between planets on rocks ejected by asteroid impacts. Life hitchhiking across space on debris.',
+  'PNAS': 'Proceedings of the National Academy of Sciences - one of the most prestigious peer-reviewed scientific journals.',
+  'UAP': 'Unidentified Anomalous Phenomena - the official US government term replacing "UFO." Reflects a shift from dismissal to systematic investigation.',
+  'Artemis Program': 'NASA\'s program to return humans to the Moon. Uses SpaceX\'s Starship as the lunar lander vehicle.'
+};
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+  const pre = btn.closest('.try-block').querySelector('pre');
+  const lines = pre.textContent.split('\n')
+    .filter(line => !line.trim().startsWith('#'))
+    .filter(line => line.trim().length > 0)
+    .join('\n');
+  navigator.clipboard.writeText(lines).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.classList.contains('dark');
+  html.classList.replace(isDark ? 'dark' : 'light', isDark ? 'light' : 'dark');
+  localStorage.setItem('ol-theme', isDark ? 'light' : 'dark');
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.innerHTML = isDark ? '&#9788;' : '&#9790;';
+}
+
+// ===== READING PROGRESS BAR =====
+window.addEventListener('scroll', () => {
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+  const bar = document.getElementById('progress');
+  if (bar) bar.style.width = scrolled + '%';
+}, { passive: true });
+
+// ===== NAV AUTO-HIDE ON SCROLL DOWN =====
+let lastScrollY = 0;
+let navHidden = false;
+const topnav = document.getElementById('topnav');
+
+if (topnav) {
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY;
+    if (currentY > lastScrollY && currentY > 120 && !navHidden) {
+      topnav.classList.add('nav-hidden');
+      navHidden = true;
+    } else if (currentY < lastScrollY && navHidden) {
+      topnav.classList.remove('nav-hidden');
+      navHidden = false;
+    }
+    lastScrollY = currentY;
+  }, { passive: true });
+}
+
+// ===== SCROLL SPY =====
+const allSections = document.querySelectorAll('.section, .summary, .jargon-section');
+const navLinks = document.querySelectorAll('#topnav a');
+
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      if (id) {
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+        history.replaceState(null, '', '#' + id);
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+allSections.forEach(sec => sectionObserver.observe(sec));
+
+// ===== JARGON TOOLTIP =====
+const tooltip = document.getElementById('tooltip');
+let tooltipTimeout = null;
+
+function showTooltip(btn, term) {
+  const def = jargonDefs[term];
+  if (!def) return;
+  tooltip.querySelector('.tt-term').textContent = term;
+  tooltip.querySelector('.tt-def').textContent = def;
+  tooltip.classList.add('visible');
+  tooltip.setAttribute('aria-hidden', 'false');
+  const rect = btn.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+  let top = rect.bottom + 8;
+  if (left < 12) left = 12;
+  if (left + tooltipRect.width > window.innerWidth - 12) left = window.innerWidth - tooltipRect.width - 12;
+  if (top + tooltipRect.height > window.innerHeight - 12) top = rect.top - tooltipRect.height - 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + window.scrollY + 'px';
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+  tooltip.setAttribute('aria-hidden', 'true');
+}
+
+document.querySelectorAll('button.jargon').forEach(btn => {
+  const term = btn.dataset.term;
+  btn.addEventListener('mouseenter', () => { tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300); });
+  btn.addEventListener('mouseleave', () => { clearTimeout(tooltipTimeout); hideTooltip(); });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); clearTimeout(tooltipTimeout); tooltip.classList.contains('visible') ? hideTooltip() : showTooltip(btn, term); });
+  btn.addEventListener('focus', () => { tooltipTimeout = setTimeout(() => showTooltip(btn, term), 300); });
+  btn.addEventListener('blur', () => { clearTimeout(tooltipTimeout); hideTooltip(); });
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.jargon') && !e.target.closest('#tooltip')) hideTooltip();
+});
+
+// ===== DEEP LINK =====
+function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const target = document.querySelector(hash);
+  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+}
+
+// ===== MOBILE NAV =====
+const bottomNav = document.getElementById('bottomnav');
+if (bottomNav) {
+  const bottomLinks = bottomNav.querySelectorAll('.bottom-nav-item[data-section]');
+  const bottomObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        bottomLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.section === entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('#summary, #jargon').forEach(el => { if (el) bottomObserver.observe(el); });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  handleDeepLink();
+  const isDark = document.documentElement.classList.contains('dark');
+  const themeBtn = document.querySelector('.theme-toggle');
+  if (themeBtn) themeBtn.innerHTML = isDark ? '&#9790;' : '&#9788;';
+});
+</script>
+
+</body>
+</html>
